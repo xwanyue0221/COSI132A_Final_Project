@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body, html {height: 100%; margin: 0; font-family: Arial, Helvetica, sans-serif; background-color: whitesmoke; align-content: center; text-align: center;}
+        .hero-image {margin-top: 2%; background-image: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1)), url("../static/banner.png"); height: 30%;
+            background-position: center; background-repeat: no-repeat; background-size: cover; position: relative;}
+        .hero-text {text-align: center; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white;}
+        .hero-text button { border: none; outline: 0; display: inline-block; padding: 8px 15px; color: black; background-color: #ddd;
+            text-align: center; cursor: pointer; border-radius: 12px;}
+        .hero-text button:hover {background-color: #555; color: white;}
+    </style>
+    <title>Washington Post Search Result</title>
+</head>
+
+<body>
+<div class="hero-image">
+    <div class="hero-text">
+        <h1 style="font-size:50px">Washington Post Search</h1>
+        <form action="{{url_for('results')}}" name="search" method="post">
+            <input type="text" id="query" name="query" size=50 value="{{ data["query_text"] }}">
+            <input type="hidden" name="page_num" value=1>
+            <button type="submit">Search</button>
+
+            <br>
+            <br>
+            <strong> Selected Analyzer: </strong>
+            <input type="radio" name="analyzer" id="english" value="english_analyzer"
+                    {% if data["analyzer"]=="english_analyzer" %} checked="checked" {% endif %}> English analyzer </input>
+            <input type="radio" name="analyzer" id="standard" value="standard_analyzer"
+                    {% if data["analyzer"]=="standard_analyzer" %} checked="checked" {% endif %}> Standard analyzer </input>
+
+            <br>
+            <strong> Selected Embedding: </strong>
+            <input type="radio" name="embedding" id="option1" value="bm25"
+                    {% if data["embedding"]=="bm25" %} checked="checked" {% endif %}> BM25 </input>
+            <input type="radio" name="embedding" id="option2" value="ft_vector"
+                    {% if data["embedding"]=="ft_vector" %} checked="checked" {% endif %}> FastText </input>
+            <input type="radio" name="embedding" id="option3" value="sbert_vector"
+                    {% if data["embedding"]=="sbert_vector" %} checked="checked" {% endif %}> Sentence Bert </input>
+
+        </form>
+    </div>
+</div>
+
+<br>
+<br>
+
+<p style="text-align:center; font-weight: bold;">Search Results</p>
+<ol>
+    {% if data["total_number"] == 0 %}
+        <p style="text-align:center;">Selected Analyzer: {{ data["analyzer"] }} </p>
+        <p style="text-align:center;">Selected Embedding: {{data["embedding"]}}</p>
+        <br>
+        <p style="text-align:center;"> {{ data["total_number"] }} document has been returned. </p>
+    {% endif %}
+
+    {% if data["total_number"] != 0 %}
+        <p style="text-align:center;">Selected Analyzer: {{ data["analyzer"] }} </p>
+        <p style="text-align:center;">Selected Embedding: {{data["embedding"]}}</p>
+        <p style="text-align:center;">{{ data["total_number"] }} document(s) have been returned. </p>
+        <br>
+
+        {% if data["total_number"] > data["page_num"]*data["page_limit"]%}
+            {% for i in range((data["page_num"] - 1)*data["page_limit"], data["page_num"]*data["page_limit"]) %}
+                <li value="{{ i + 1 }}">
+                    <h4 style="text-align:center;">
+                        <a href="/doc_data/{{ data["doc_results"][i].0 }}"> Score:{ {{ data["doc_results"][i].1 }} }   Title: {{ data["doc_results"][i].2 }}</a>
+                        <br>
+                        <p style="font-size:0.7em"> {{ data["doc_results"][i].3 }} </p>
+                    </h4>
+                </li>
+            {% endfor %}
+
+        {% elif data["total_number"] <= data["page_num"]*data["page_limit"]%}
+            {% for i in range((data["page_num"] - 1)*data["page_limit"], data["total_number"]) %}
+                <li value="{{ i + 1  }}">
+                    <h4 style="text-align:center;">
+                        <a href="/doc_data/{{ data["doc_results"][i].0 }}"> Score:{ {{ data["doc_results"][i].1 }} }   Title: {{ data["doc_results"][i].2 }}</a>
+                        <br>
+                        <p style="font-size:0.7em"> {{ data["doc_results"][i].3 }} </p>
+                    </h4>
+                </li>
+            {% endfor %}
+        {% endif %}
+    {% endif %}
+
+</ol>
+
+{% if (data["page_num"])*data["page_limit"] < data["total_number"] %}
+    <br>
+    <form style="align-content: center" action="{{ url_for("next_page", page_id=data["page_num"] + 1) }}" name="next" method="post">
+        <input type="hidden" name="query", value="{{ data["query_text"] }}">
+        <input type="hidden" name="total_number", value="{{ data["total_number"] }}">
+        <input type="hidden" name="analyzer", value="{{ data["analyzer"] }}">
+        <input type="hidden" name="embedding", value="{{ data["embedding"] }}">
+        <input type="hidden" name="doc_results", value="{{ data["doc_results"] }}">
+        <input type="submit" value="Next Page">
+
+    </form>
+{% endif %}
+
+</body>
+</html>

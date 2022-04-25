@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body, html {height: 100%; margin: 0; text-align:center; font-family: Arial, Helvetica, sans-serif; background-color: whitesmoke;}
+    </style>
+    <title>Washington Post Search</title>
+</head>
+
+<body>
+
+<h2>{{ data["title"] }}</h2>
+<h3>{{ data["author"] }}</h3>
+<h3>{{ data["date"] }}</h3>
+<br>
+
+<p style="text-align:left">{{ data["content"] }}</p>
+<br>
+
+<form action="{{url_for('home')}}" name="back" method="get">
+    <input type="submit" value="Back to Home">
+</form>
+
+</body>
+</html>
