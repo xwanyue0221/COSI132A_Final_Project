@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import ast
 import argparse
+from datetime import datetime
 # from typing import Dict, Tuple
 from flask import Flask, render_template, request
 from elasticsearch_dsl import Search
@@ -32,25 +33,50 @@ def results():
 
     query_text = request.form["query"]  # Get the raw user query from home page
     page_num = int(request.form['page_num'])  # Get the page number from home page
+    custom_date_top = request.form['true_date_top'] if 'true_date_top' in request.form else None
+    custom_date_bottom = request.form['true_date_bottom'] if 'true_date_bottom' in request.form else None
     if query_text == "":
         return home()
 
-    analyzer_type = request.form['analyzer'] if 'analyzer' in request.form else 'english_analyzer'
-    embed_type = request.form['embedding'] if 'embedding' in request.form else 'bm25'
+    sort_type = request.form['true_sorting'] if 'true_sorting' in request.form else 'relevance'
+    analyzer_type = request.form['true_analyzer'] if 'true_analyzer' in request.form else 'english_analyzer'
+    embed_type = request.form['true_embedding'] if 'true_embedding' in request.form else 'bm25'
     search_type = 'vector' if embed_type=='bm25' else 'rerank'
     if args.debug:
         print(analyzer_type)
         print(embed_type)
+        print(sort_type)
+        print(custom_date_top, custom_date_bottom)
         print()
 
     english_analyzer = (analyzer_type == "english_analyzer")
     response = get_response(args.index_name, query_text, english_analyzer, search_type, embed_type, args.top_k, args.debug)
-    doc_result = [(hit.meta.id, round(hit.meta.score,4), hit.title, hit.content[:150]+'......') for hit in response]
+    doc_result = [(hit.meta.id, round(hit.meta.score,4), hit.title, hit.content[:200]+'......', hit.date) for hit in response]
+    if sort_type == "date":
+        doc_result.sort(key = lambda x: x[4])
+
+    print(type(custom_date_top), len(custom_date_top.strip()))
+
+    if custom_date_top is not None and len(custom_date_top.strip()) > 0:
+        try:
+            start_date = datetime.strptime(custom_date_top.strip(), '%Y/%m/%d')
+            doc_result = [each for each in doc_result if datetime.strptime(each[4], '%Y/%m/%d') >= start_date]
+        except ValueError as e:
+            print('Value Error')
+
+    if custom_date_bottom is not None and len(custom_date_bottom.strip()) > 0:
+        try:
+            end_date = datetime.strptime(custom_date_bottom.strip(), '%Y/%m/%d')
+            doc_result = [each for each in doc_result if datetime.strptime(each[4], '%Y/%m/%d') <= end_date]
+        except ValueError as e:
+            print('Value Error')
+
     if args.debug:
         print(args.top_k, query_text)
 
     doc_json ={"page_limit":page_limit, "query_text":str(query_text), "page_num":int(page_num), "doc_results":doc_result,
-               "total_number":len(response), "analyzer":analyzer_type, "embedding": embed_type}
+               "sort": sort_type, "total_number":len(doc_result), "analyzer":analyzer_type, "embedding": embed_type,
+               "start_date":custom_date_top.strip(), "end_date":custom_date_bottom.strip()}
     return render_template("results.html", data=doc_json)
 
 
@@ -64,8 +90,11 @@ def next_page(page_id):
     """
     query_text = request.form["query"]  # Get the raw user query from home page
     total_number=int(request.form["total_number"])
+    sort_type = str(request.form["sort"])
     analyzer_type = str(request.form["analyzer"])
     embed_type = str(request.form["embedding"])
+    start_date = str(request.form["true_date_top"]).strip()
+    end_date = str(request.form["true_date_bottom"]).strip()
     doc_results = ast.literal_eval(request.form["doc_results"])
 
     if len(doc_results) == 0:
@@ -74,6 +103,9 @@ def next_page(page_id):
                    "page_num":int(page_id),
                    "doc_results":doc_results,
                    "total_number":0,
+                   "sort": sort_type,
+                   "start_date": start_date,
+                   "end_date": end_date,
                    "analyzer":analyzer_type,
                    "embedding": embed_type}
         return render_template('results.html', data=doc_json)
@@ -83,6 +115,9 @@ def next_page(page_id):
                    "page_num":int(page_id),
                    "doc_results":doc_results,
                    "total_number":total_number,
+                   "sort": sort_type,
+                   "start_date": start_date,
+                   "end_date": end_date,
                    "analyzer":analyzer_type,
                    "embedding": embed_type}
         return render_template('results.html', data=doc_json)
@@ -110,7 +145,7 @@ def doc_data(doc_id):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Elasticsearch IR system") # creating arguments
     parser.add_argument("--index_name", required=False, type=str, default="wapo_docs_50k", help="name of the ES index")
-    parser.add_argument("--top_k", required=False, type=int, default=20, help="evaluate on top k ranked documents")
+    parser.add_argument("--top_k", required=False, type=int, default=100, help="evaluate on top k ranked documents")
     parser.add_argument("--debug", action='store_true', help="debug mode activated")
     args = parser.parse_args()
     app.run(debug=True, port=5000)

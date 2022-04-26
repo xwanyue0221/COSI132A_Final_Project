@@ -164,7 +164,7 @@ def main():
     parser.add_argument("--use_english_analyzer", action='store_true', help="use english analyzer for BM25 search")
     parser.add_argument("--search_type", required=False, type=str, default='vector', help="reranking or ranking with vector only")
     parser.add_argument("--vector_name", required=False, type=str, default="bm25", help="use fasttext or sbert embedding")
-    parser.add_argument("--top_k", required=True, type=int, default=20, help="evaluate on top k ranked documents")
+    parser.add_argument("--top_k", required=True, type=int, default=10000, help="evaluate on top k ranked documents")
     parser.add_argument("--debug", action='store_true', help="debug mode activated")
     args = parser.parse_args()
 
