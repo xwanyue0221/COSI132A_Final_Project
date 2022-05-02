@@ -39,8 +39,8 @@ def generate_script_score_query(query_vector: List[float], embedding_type: str) 
         :return: an query object
     """
     q_script = ScriptScore(query={"match_all": {}},  # use a match-all query
-                           script={"source": f"cosineSimilarity(params.query_vector, '{embedding_type}') + 1.0",
-                                   "params": {"query_vector": query_vector}})
+                            script={"source": f"cosineSimilarity(params.query_vector, '{embedding_type}') + 1.0",
+                                    "params": {"query_vector": query_vector}})
     return q_script
 
 
@@ -63,6 +63,9 @@ def re_rank(query_text: str, embedding_type: str, response: List[Any], debug: bo
     elif embedding_type == "sbert_vector":
         if debug: print("Re-rank query with {} embedding vector".format("sbert"))
         encoder = EmbeddingClient(host="localhost", embedding_type="sbert")
+    elif embedding_type == "simCSE_vector":
+        if debug: print("Re-rank query with {} embedding vector".format("simCSE"))
+        encoder = EmbeddingClient(host="localhost", embedding_type="simCSE")
     else:
         raise NotImplementedError(embedding_type)
 
@@ -138,6 +141,12 @@ def get_response(index_name:str, query_text:str, english_analyzer:bool, search_t
             query_vector = encoder.encode([query_text], pooling="mean").tolist()[0]
             q_vector = generate_script_score_query(query_vector, embedding)
             response = search(index_name, q_vector, k)
+        elif embedding == "simCSE_vector":
+            if debug: print("Rank query with {} embedding vector".format("simCSE"))
+            encoder = EmbeddingClient(host="localhost", embedding_type="simCSE")
+            query_vector = encoder.encode([query_text], pooling="mean").tolist()[0]
+            q_vector = generate_script_score_query(query_vector, embedding)
+            response = search(index_name, q_vector, k)
         else:
             raise NotImplementedError(embedding)
 
@@ -159,8 +168,8 @@ def main():
     connections.create_connection(hosts=["localhost"], timeout=100, alias="default") # getting connection to the elasticsearch server
     parser = argparse.ArgumentParser(description="Elasticsearch IR system") # creating arguments
     parser.add_argument("--index_name", required=True, type=str, default="wapo_docs_50k", help="name of the ES index")
-    parser.add_argument("--topic_id", required=True, type=str, default="TOPIC_ID", help="topic id number")
-    parser.add_argument("--query_type", required=True, type=str, default='kw', help="use keyword or natural language query")
+    parser.add_argument("--topic_id", type=str, default="TOPIC_ID", help="topic id number")
+    parser.add_argument("--query_type", type=str, default='kw', help="use keyword or natural language query")
     parser.add_argument("--use_english_analyzer", action='store_true', help="use english analyzer for BM25 search")
     parser.add_argument("--search_type", required=False, type=str, default='vector', help="reranking or ranking with vector only")
     parser.add_argument("--vector_name", required=False, type=str, default="bm25", help="use fasttext or sbert embedding")
@@ -170,18 +179,8 @@ def main():
 
     # loading example queries from the pa5_queries.json file
     queries = load_topic_queries("pa5_data/pa5_queries.json")
-    # checking the type of query that we are going to use for matching
-    if args.query_type == "kw":
-        query_text = queries[args.topic_id]['kw']
-    elif args.query_type == "nl":
-        query_text = queries[args.topic_id]['nl']
-    else:
-        raise ValueError
-    if args.debug: print("Print Query Text:", query_text, "Print Search Type:", args.search_type, "Print Vector Name:", args.vector_name, sep="\t")
 
     top_k = int(args.top_k)
-    if args.debug: print("Looking for top {} docuemnts from the dataset".format(top_k))
-    response = get_response(args.index_name, query_text, args.use_english_analyzer, args.search_type, args.vector_name, top_k, args.debug)
 
     # for each of the 12 example queries, calculate the ndcg score under different conditions
     writeToCSV = True
@@ -190,10 +189,26 @@ def main():
         print("Start Queries Evaluation")
         print("****************"*3)
         # print()
-
         English_Analyzer = True
         query_topic = [k for k in queries]
+        print(query_topic)
         header = ['name', 'kw', 'nl']
+        sum_vector_kw_bm25 = 0
+        sum_vector_nl_bm25 = 0
+        sum_vector_kw_sbert = 0
+        sum_vector_nl_sbert = 0
+        sum_vector_kw_simCSE = 0
+        sum_vector_nl_simCSE = 0
+        
+        sum_rerank_kw_ft = 0
+        sum_rerank_nl_ft = 0
+        sum_rerank_kw_sbert = 0
+        sum_rerank_nl_sbert = 0
+        sum_rerank_kw_simCSE = 0
+        sum_rerank_nl_simCSE = 0
+        
+
+
         for topic in query_topic:
             with open(f'./scores/top{top_k}_for_{topic}.csv', 'w', newline='') as f:
                 writer = csv.writer(f)
@@ -203,21 +218,53 @@ def main():
                 query_text1 = queries[topic]['kw']
                 query_text2 = queries[topic]['nl']
 
-                vector_kw = get_score(get_response(args.index_name, query_text1, English_Analyzer, "vector", 'bm25', top_k, args.debug), topic, top_k).ndcg
-                vector_nl = get_score(get_response(args.index_name, query_text2, English_Analyzer, "vector", 'bm25', top_k, args.debug), topic, top_k).ndcg
-                rerank_kw = get_score(get_response(args.index_name, query_text1, English_Analyzer, "rerank", "ft_vector", top_k, args.debug), topic, top_k).ndcg
-                rerank_nl = get_score(get_response(args.index_name, query_text2, English_Analyzer, "rerank", "ft_vector", top_k, args.debug), topic, top_k).ndcg
+                vector_kw_bm25 = get_score(get_response(args.index_name, query_text1, English_Analyzer, "vector", 'bm25', top_k, args.debug), topic, top_k).ndcg
+                vector_nl_bm25 = get_score(get_response(args.index_name, query_text2, English_Analyzer, "vector", 'bm25', top_k, args.debug), topic, top_k).ndcg
+                writer.writerow(['vector_bm25', round(vector_kw_bm25, 4), round(vector_nl_bm25, 4)])
+                sum_vector_kw_bm25 += vector_kw_bm25
+                sum_vector_nl_bm25 += vector_nl_bm25
 
-                # print()
-                # print("vector_kw ", vector_kw, "  vector_nl ",vector_nl)
-                # print("rerank_kw ", rerank_kw, "  rerank_nl ",rerank_nl)
-                # print()
+                vector_kw_sbert = get_score(get_response(args.index_name, query_text1, English_Analyzer, "vector", 'sbert_vector', top_k, args.debug), topic, top_k).ndcg
+                vector_nl_sbert = get_score(get_response(args.index_name, query_text2, English_Analyzer, "vector", 'sbert_vector', top_k, args.debug), topic, top_k).ndcg
+                writer.writerow(['vector_sbert', round(vector_kw_sbert, 4), round(vector_nl_sbert, 4)])
+                sum_vector_kw_sbert += vector_kw_sbert
+                sum_vector_nl_sbert += vector_nl_sbert
 
-                vector_score = ['vector', round(vector_kw, 4), round(vector_nl, 4)]
-                rerank_score = ['rerank', round(rerank_kw, 4), round(rerank_nl, 4)]
-                writer.writerow(vector_score)
-                writer.writerow(rerank_score)
-                f.close()
+                vector_kw_simCSE = get_score(get_response(args.index_name, query_text1, English_Analyzer, "vector", 'simCSE_vector', top_k, args.debug), topic, top_k).ndcg
+                vector_nl_simCSE = get_score(get_response(args.index_name, query_text2, English_Analyzer, "vector", 'simCSE_vector', top_k, args.debug), topic, top_k).ndcg
+                writer.writerow(['vector_simCSE', round(vector_kw_simCSE, 4), round(vector_nl_simCSE, 4)])
+                sum_vector_kw_simCSE += vector_kw_simCSE
+                sum_vector_nl_simCSE += vector_nl_simCSE
+
+                rerank_kw_ft = get_score(get_response(args.index_name, query_text1, English_Analyzer, "rerank", "ft_vector", top_k, args.debug), topic, top_k).ndcg
+                rerank_nl_ft = get_score(get_response(args.index_name, query_text2, English_Analyzer, "rerank", "ft_vector", top_k, args.debug), topic, top_k).ndcg
+                writer.writerow(['rerank_ft', round(rerank_kw_ft, 4), round(rerank_nl_ft, 4)])
+                sum_rerank_kw_ft += rerank_kw_ft
+                sum_rerank_nl_ft += rerank_nl_ft
+
+                rerank_kw_sbert = get_score(get_response(args.index_name, query_text1, English_Analyzer, "rerank", "sbert_vector", top_k, args.debug), topic, top_k).ndcg
+                rerank_nl_sbert = get_score(get_response(args.index_name, query_text2, English_Analyzer, "rerank", "sbert_vector", top_k, args.debug), topic, top_k).ndcg
+                writer.writerow(['rerank_sbert', round(rerank_kw_sbert, 4), round(rerank_nl_sbert, 4)])
+                sum_rerank_kw_sbert += rerank_kw_sbert
+                sum_rerank_nl_sbert += rerank_nl_sbert
+
+                rerank_kw_simCSE = get_score(get_response(args.index_name, query_text1, English_Analyzer, "rerank", "simCSE_vector", top_k, args.debug), topic, top_k).ndcg
+                rerank_nl_simCSE = get_score(get_response(args.index_name, query_text2, English_Analyzer, "rerank", "simCSE_vector", top_k, args.debug), topic, top_k).ndcg
+                writer.writerow(['rerank_simCSE', round(rerank_kw_simCSE, 4), round(rerank_nl_simCSE, 4)])
+                sum_rerank_kw_simCSE += rerank_kw_simCSE
+                sum_rerank_nl_simCSE += rerank_nl_simCSE
+                # f.close()
+        
+        with open(f'./scores/average.csv', 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(header)
+            writer.writerow(['vector_bm25', round(sum_vector_kw_bm25/12, 4), round(sum_vector_nl_bm25/12, 4)])
+            writer.writerow(['vector_sbert', round(sum_vector_kw_sbert/12, 4), round(sum_vector_nl_sbert/12, 4)])
+            writer.writerow(['vector_simCSE', round(sum_vector_kw_simCSE/12, 4), round(sum_vector_nl_simCSE/12, 4)])
+            writer.writerow(['rerank_ft', round(sum_rerank_kw_ft/12, 4), round(sum_rerank_nl_ft/12, 4)])
+            writer.writerow(['rerank_sbert', round(sum_rerank_kw_sbert/12, 4), round(sum_rerank_nl_sbert/12, 4)])
+            writer.writerow(['rerank_simCSE', round(sum_rerank_kw_simCSE/12, 4), round(sum_rerank_nl_simCSE/12, 4)])
+            # f.close()
         print()
         print("****************"*3)
         print("Queries Evaluation End")

@@ -1,14 +1,20 @@
-# load fasttext embeddings that are trained on wiki news. Each embedding has 300 dimensions
-python -m embedding_service.server --embedding fasttext  --model pa5_data/wiki-news-300d-1M-subword.vec
+# open elastic search service
+#########Keep Commenting Out##########
+# $ cd elasticsearch-7.10.2/ 
+# $ ./bin/elasticsearch
 
-# load sentence BERT embeddings that are trained on msmarco. Each embedding has 768 dimensions
-python -m embedding_service.server --embedding sbert  --model msmarco-distilbert-base-v3
+# # load fasttext embeddings that are trained on wiki news. Each embedding has 300 dimensions
+# python -m embedding_service.server --embedding fasttext  --model pa5_data/wiki-news-300d-1M-subword.vec
 
-# load wapo docs into the index called "wapo_docs_50k"
-python load_es_index.py --index_name wapo_docs_50k --wapo_path pa5_data/subset_wapo_50k_sbert_ft_filtered.jl
+# # load sentence BERT embeddings that are trained on msmarco. Each embedding has 768 dimensions
+# python -m embedding_service.server --embedding sbert  --model msmarco-distilbert-base-v3
 
-# use keyword from topic 363 as the query; search over the stemmed_content field from index "wapo_docs_50k" based on BM25 and compute NDCG@20
-python evaluate.py --index_name wapo_docs_50k --topic_id 363 --query_type kw --use_english_analyzer --top_k 20
+# # LOAD enbeddings that trained on unsupervised simCSE
+# python -m embedding_service.server --embedding simCSE  --model princeton-nlp/unsup-simcse-bert-base-uncased
 
-# use natural language from topic 363 as the query; search over the stemmed_content field from index "wapo_docs_50k" based on sentence BERT embedding reranking query and compute NDCG@20
-python evaluate.py --index_name wapo_docs_50k --topic_id 363 --query_type nl --vector_name sbert_vector --top_k 20  --search_type rerank
+# # load wapo docs into the index called "wapo_docs_50k"
+# python load_es_index.py --index_name wapo_docs_50k --wapo_path pa5_data/update_wapo.jl
+
+
+# calculate results 
+python evaluate.py --index_name wapo_docs_50k --use_english_analyzer --top_k 20
