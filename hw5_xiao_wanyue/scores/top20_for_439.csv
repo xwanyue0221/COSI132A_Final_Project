@@ -1,0 +1,7 @@
+name,kw,nl
+vector_bm25,0.1094,0.0192
+vector_sbert,0.1291,0.2397
+vector_simCSE,0.1971,0.1467
+rerank_ft,0.073,0.0253
+rerank_sbert,0.1322,0.0224
+rerank_simCSE,0.106,0.0224
