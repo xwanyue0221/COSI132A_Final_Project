@@ -1,0 +1,4 @@
+name,kw,nl
+vector_bm25,0.5907,0.5571
+vector_sbert,0.6374,0.7703
+vector_simCSE,0.275,0.3242
