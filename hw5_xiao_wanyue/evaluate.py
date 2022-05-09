@@ -10,10 +10,10 @@ from elasticsearch_dsl.query import Match, ScriptScore, Ids, Query
 from elasticsearch_dsl.connections import connections
 from embedding_service.client import EmbeddingClient
 import csv
-from NER_fatch import query_db_index
+# from NER_fatch import query_db_index
 
-from flair.data import Sentence
-from flair.models import SequenceTagger
+# from flair.data import Sentence
+# from flair.models import SequenceTagger
 
 
 def get_score(response: List[Any], topic_id: str, k: int) -> Score:
@@ -67,6 +67,9 @@ def re_rank(query_text: str, embedding_type: str, response: List[Any], debug: bo
     elif embedding_type == "sbert_vector":
         if debug: print("Re-rank query with {} embedding vector".format("sbert"))
         encoder = EmbeddingClient(host="localhost", embedding_type="sbert")
+    elif embedding_type == "topic_vector":
+        if debug: print("Re-rank query with {} embedding vector".format("topic"))
+        encoder = EmbeddingClient(host="localhost", embedding_type="topic")
     else:
         raise NotImplementedError(embedding_type)
 
@@ -222,7 +225,7 @@ def main():
     response = get_response(args.index_name, query_text, args.use_english_analyzer, args.search_type, args.vector_name, top_k, args.debug)
 
     # for each of the 12 example queries, calculate the ndcg score under different conditions
-    writeToCSV = False
+    writeToCSV = True
     if writeToCSV:
         print()
         print("Start Queries Evaluation")
@@ -243,18 +246,22 @@ def main():
 
                 vector_kw = get_score(get_response(args.index_name, query_text1, English_Analyzer, "vector", 'bm25', top_k, args.debug), topic, top_k).ndcg
                 vector_nl = get_score(get_response(args.index_name, query_text2, English_Analyzer, "vector", 'bm25', top_k, args.debug), topic, top_k).ndcg
-                rerank_kw = get_score(get_response(args.index_name, query_text1, English_Analyzer, "rerank", "ft_vector", top_k, args.debug), topic, top_k).ndcg
-                rerank_nl = get_score(get_response(args.index_name, query_text2, English_Analyzer, "rerank", "ft_vector", top_k, args.debug), topic, top_k).ndcg
+                ft_rerank_kw = get_score(get_response(args.index_name, query_text1, English_Analyzer, "rerank", "ft_vector", top_k, args.debug), topic, top_k).ndcg
+                ft_rerank_nl = get_score(get_response(args.index_name, query_text2, English_Analyzer, "rerank", "ft_vector", top_k, args.debug), topic, top_k).ndcg
+                sbert_rerank_kw = get_score(get_response(args.index_name, query_text1, English_Analyzer, "rerank", "sbert_vector", top_k, args.debug), topic, top_k).ndcg
+                sbert_rerank_nl = get_score(get_response(args.index_name, query_text2, English_Analyzer, "rerank", "sbert_vector", top_k, args.debug), topic, top_k).ndcg
+                topic_rerank_kw = get_score(get_response(args.index_name, query_text1, English_Analyzer, "rerank", "topic_vector", top_k, args.debug), topic, top_k).ndcg
+                topic_rerank_nl = get_score(get_response(args.index_name, query_text2, English_Analyzer, "rerank", "topic_vector", top_k, args.debug), topic, top_k).ndcg
 
-                # print()
-                # print("vector_kw ", vector_kw, "  vector_nl ",vector_nl)
-                # print("rerank_kw ", rerank_kw, "  rerank_nl ",rerank_nl)
-                # print()
 
                 vector_score = ['vector', round(vector_kw, 4), round(vector_nl, 4)]
-                rerank_score = ['rerank', round(rerank_kw, 4), round(rerank_nl, 4)]
+                ft_rerank_score = ['ft_rerank', round(ft_rerank_kw, 4), round(ft_rerank_nl, 4)]
+                sbert_rerank_score = ['sbert_rerank', round(sbert_rerank_kw, 4), round(sbert_rerank_nl, 4)]
+                topic_rerank_score = ['topic_rerank', round(topic_rerank_kw, 4), round(topic_rerank_nl, 4)]
                 writer.writerow(vector_score)
-                writer.writerow(rerank_score)
+                writer.writerow(ft_rerank_score)
+                writer.writerow(sbert_rerank_score)
+                writer.writerow(topic_rerank_score)
                 f.close()
         print()
         print("****************"*3)

@@ -14,6 +14,7 @@ class BaseDoc(Document):
     annotation = Text()
     ft_vector = DenseVector(dims=300)  # fasttext embedding in the DenseVector field
     sbert_vector = DenseVector(dims=768)  # sentence BERT embedding in the DenseVector field
+    topic_vector = DenseVector(dims=50)
 
 
     def save(self, *args, **kwargs):
