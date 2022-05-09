@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body, html {height: 100%; margin: 0; text-align:center; font-family: Arial, Helvetica, sans-serif; background-color: whitesmoke;}
+        h3 { color: #52707e; }
+        h4 { color: #52707e; }
+        p { color: #52707e; }
+    </style>
+    <title>Washington Post Search</title>
+</head>
+
+<body>
+
+<h3> Title: {{ data["title"] }}</h3>
+<h4> Author: {{ data["author"] }}</h4>
+<h4> Date: {{ data["date"] }}</h4>
+<br>
+
+<div style="padding-left: 2.6%; padding-right: 2.6%;">
+    <p style="line-height:1.6; text-align:justify;"> &nbsp &nbsp &nbsp {{ data["content"] }}</p>
+</div>
+<br>
+
+<form action="{{url_for('home')}}" name="back" method="get">
+    <input type="submit" value="Back to Home">
+</form>
+
+</body>
+</html>
