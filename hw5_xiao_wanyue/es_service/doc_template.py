@@ -5,6 +5,7 @@ class BaseDoc(Document):
     """
     wapo document mapping structure
     """
+
     doc_id = (Keyword())  # we want to treat the doc_id as a Keyword (its value won't be tokenized or normalized).
     title = (Text())  # by default, Text field will be applied a standard analyzer at both index and search time
     author = Text()
@@ -14,7 +15,7 @@ class BaseDoc(Document):
     annotation = Text()
     ft_vector = DenseVector(dims=300)  # fasttext embedding in the DenseVector field
     sbert_vector = DenseVector(dims=768)  # sentence BERT embedding in the DenseVector field
-
+    topic_vector = DenseVector(dims=50)
 
     def save(self, *args, **kwargs):
         """
