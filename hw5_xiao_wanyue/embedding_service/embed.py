@@ -8,7 +8,11 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 from embedding_service.text_processing import TextProcessing
 
+import gensim
+import gensim.corpora as corpora
+import os
 
+NUM_TOPICS = 50
 class SBERTEmbedding:
     def __init__(self, model_name: str) -> None:
         """
@@ -94,6 +98,39 @@ class FastTextEmbedding:
         return doc_embeddings
 
 
+class LDAEmbedding:
+    def __init__(self, model_dir: str) -> None:
+        self.model_dir = model_dir
+        self.lda_model = None
+        self.lda_dict = None
+        self._load_lda_model()
+        self._load_dictionary()
+
+
+    def _load_lda_model(self) -> None:
+        try:
+            self.lda_model = gensim.models.ldamodel.LdaModel.load(os.path.join(self.model_dir, "lda_model.model"))
+            print("LDA model loaded Successfully !")
+        except Exception as e:
+            print("Error loading LDA model, ", str(e))
+
+
+    def _load_dictionary(self) -> None:
+        try:
+            self.lda_dict = corpora.Dictionary.load(os.path.join(self.model_dir, "lda_model.model.id2word"))
+            print("LDA dictionary loaded Successfully !")
+        except Exception as e:
+            print("Error loading LDA dictionary, ", str(e))
+
+
+    def encode(self, texts: List[str], pooling: str = "mean") -> np.array:
+        texts = self.lda_dict.doc2bow(texts[0].split())
+        topic_probs = self.lda_model[texts]
+        topic_embedding = np.zeros(NUM_TOPICS)
+        for topic, prob in topic_probs[0]:
+            topic_embedding[topic] = prob
+        return topic_embedding
+
 class Encoder:
     def __init__(self, embedding: str, model: str) -> None:
         """
@@ -111,6 +148,8 @@ class Encoder:
             self.embedding_model = SBERTEmbedding(self.model)
         elif self.embedding == "fasttext":
             self.embedding_model = FastTextEmbedding(self.model)
+        elif self.embedding == "topic":
+            self.embedding_model = LDAEmbedding(self.model)
         else:
             raise ValueError(f"cannot find model: {self.model}.")
 
