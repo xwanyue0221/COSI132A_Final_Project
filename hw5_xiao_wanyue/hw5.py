@@ -10,24 +10,16 @@ from elasticsearch import Elasticsearch
 from elasticsearch_dsl.query import Ids
 from elasticsearch_dsl.connections import connections
 from evaluate import get_response, get_score
-from spell_corrector import SpellCorrector
 
 app = Flask(__name__)
 es = Elasticsearch()
 connections.create_connection(hosts=["localhost"], timeout=100, alias="default")
-sc = SpellCorrector()
 page_limit = 8
 
 
 # home page
 @app.route("/")
 def home():
-    return render_template("test.html")
-
-
-# back to home page
-@app.route("/home", methods=["POST"])
-def back_to_home():
     return render_template("test.html")
 
 
@@ -64,12 +56,14 @@ def results():
         doc_result.sort(key = lambda x: x[4])
 
     print(type(custom_date_top), len(custom_date_top.strip()))
+
     if custom_date_top is not None and len(custom_date_top.strip()) > 0:
         try:
             start_date = datetime.strptime(custom_date_top.strip(), '%Y/%m/%d')
             doc_result = [each for each in doc_result if datetime.strptime(each[4], '%Y/%m/%d') >= start_date]
         except ValueError as e:
             print('Value Error')
+
     if custom_date_bottom is not None and len(custom_date_bottom.strip()) > 0:
         try:
             end_date = datetime.strptime(custom_date_bottom.strip(), '%Y/%m/%d')
@@ -80,21 +74,8 @@ def results():
     if args.debug:
         print(args.top_k, query_text)
 
-    query_token = query_text.lower().split(" ")
-    recommend = []
-    changed = 0
-
-    for each in query_token:
-        if sc.correct(each) == each:
-            recommend.append(each)
-        else:
-            changed = 1
-            recommend.append(sc.correct(each))
-    if args.debug: print(recommend)
-    recommend = ' '.join(recommend)
-
-    doc_json ={"page_limit":page_limit, "query_text":str(query_text), "page_num":int(page_num), "doc_results":doc_result, "changed":changed,
-               "sort": sort_type, "total_number":len(doc_result), "analyzer":analyzer_type, "embedding": embed_type, "spell_correct":recommend,
+    doc_json ={"page_limit":page_limit, "query_text":str(query_text), "page_num":int(page_num), "doc_results":doc_result,
+               "sort": sort_type, "total_number":len(doc_result), "analyzer":analyzer_type, "embedding": embed_type,
                "start_date":custom_date_top.strip(), "end_date":custom_date_bottom.strip()}
     return render_template("results.html", data=doc_json)
 
@@ -145,20 +126,26 @@ def next_page(page_id):
 # document page
 @app.route("/doc_data/<int:doc_id>")
 def doc_data(doc_id):
-    if args.debug: print(doc_id)
+    if args.debug:
+        print(doc_id)
 
     search = Search(using="default", index=args.index_name).query(Ids(values=[doc_id]))
     results = search.execute()
     doc_result = [(hit.title, hit.author, hit.date, hit.content) for hit in results][0]
 
-    doc_content ={"title":str(doc_result[0]), "author":str(doc_result[1]), "date":str(doc_result[2]), "content": str(doc_result[3])}
+    doc_content ={
+        "title":str(doc_result[0]),
+        "author":str(doc_result[1]),
+        "date":str(doc_result[2]),
+        "content": str(doc_result[3])
+    }
     return render_template("doc.html", data=doc_content)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Elasticsearch IR system") # creating arguments
     parser.add_argument("--index_name", required=False, type=str, default="wapo_docs_50k", help="name of the ES index")
-    parser.add_argument("--top_k", required=False, type=int, default=10000, help="evaluate on top k ranked documents")
+    parser.add_argument("--top_k", required=False, type=int, default=100, help="evaluate on top k ranked documents")
     parser.add_argument("--debug", action='store_true', help="debug mode activated")
     args = parser.parse_args()
     app.run(debug=True, port=5000)

@@ -44,6 +44,7 @@ class ESIndex(object):
             es_doc.date = doc["published_date"]
             es_doc.ft_vector = doc["ft_vector"]
             es_doc.sbert_vector = doc["sbert_vector"]
+            es_doc.topic_vector = doc["topic_vector"]
             yield es_doc
 
     def load(self, docs: Union[Iterator[Dict], Sequence[Dict]]):
