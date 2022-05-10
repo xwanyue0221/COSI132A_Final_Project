@@ -3,8 +3,6 @@ COSI132A Information Retrieval Spring 2022 - Final Project: Analysis on Differen
 
 ## Description
 * This is documentation of the final project for course COSI 132A Information Retrieval. 
-* The team members include Capo Wang, Xiya Guan, Wanyue Xiao.
-* Each of the team member equally contributed to this project.
 * A TREC 2018 core corpus subset and twelve TREC topics with relevance judgments will be used for system development and result evaluation.
 * In this project, we will provide example code for:
   - Populating and querying a corpus using ES
@@ -15,6 +13,15 @@ COSI132A Information Retrieval Spring 2022 - Final Project: Analysis on Differen
   - Indexing the corpus into ES with default standard analyzer and English analyzer for the text fields
   - Integrate ES into the Flask service for interactive search. Beside the traditional lexical search, the system should also allow the user to select the text representation to use for searching.
   - Evaluate the performance of 12 provided TREC query pairs using NDCG. For each of the 12 query pairs, produce a result table along with a brief analysis.
+
+
+## Team Member Contribution
+The team members include Capo Wang, Xiya Guan, Wanyue Xiao. Each of the team member equally contributed to this project.
+
+**Capo Wang**: Unsupervised- and unsupervised simSCE Embedding with corresponding result analysis
+**Xiya Guan**: Topic Modeling Feature Embedding with corresponding result analysis
+**Wanyue Xiao**: Front End Web Development, "Did you mean" feature, Sorting Option, Time Filtering Option
+
 
 ## Dataset
 A larger subset of TREC 2018 core corpus that has already been processed. Specifically, each document has the following fields:
