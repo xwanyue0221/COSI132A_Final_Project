@@ -66,6 +66,10 @@ def re_rank(query_text: str, embedding_type: str, response: List[Any], debug: bo
     elif embedding_type == "simCSE_vector":
         if debug: print("Re-rank query with {} embedding vector".format("simCSE"))
         encoder = EmbeddingClient(host="localhost", embedding_type="simCSE")
+    elif embedding_type == "sup_simCSE_vector" or embedding_type == "sup_simCSE_para_mean" or embedding_type == "sup_simCSE_para_max":
+        if debug: print("Re-rank query with {} embedding vector".format("sup_simCSE"))
+        encoder = EmbeddingClient(host="localhost", embedding_type="supsimCSE")
+    
     else:
         raise NotImplementedError(embedding_type)
 
@@ -147,6 +151,24 @@ def get_response(index_name:str, query_text:str, english_analyzer:bool, search_t
             query_vector = encoder.encode([query_text], pooling="mean").tolist()[0]
             q_vector = generate_script_score_query(query_vector, embedding)
             response = search(index_name, q_vector, k)
+        elif embedding == "sup_simCSE_vector":
+            if debug: print("Rank query with {} embedding vector".format("supsimCSE"))
+            encoder = EmbeddingClient(host="localhost", embedding_type="supsimCSE")
+            query_vector = encoder.encode([query_text], pooling="mean").tolist()[0]
+            q_vector = generate_script_score_query(query_vector, embedding)
+            response = search(index_name, q_vector, k)
+        elif embedding == "sup_simCSE_para_mean":
+            if debug: print("Rank query with {} embedding vector".format("vector_para_mean"))
+            encoder = EmbeddingClient(host="localhost", embedding_type="supsimCSE")
+            query_vector = encoder.encode([query_text], pooling="mean").tolist()[0]
+            q_vector = generate_script_score_query(query_vector, embedding)
+            response = search(index_name, q_vector, k)
+        elif embedding == "sup_simCSE_para_max":
+            if debug: print("Rank query with {} embedding vector".format("vector_para_max"))
+            encoder = EmbeddingClient(host="localhost", embedding_type="supsimCSE")
+            query_vector = encoder.encode([query_text], pooling="mean").tolist()[0]
+            q_vector = generate_script_score_query(query_vector, embedding)
+            response = search(index_name, q_vector, k)
         else:
             raise NotImplementedError(embedding)
 
@@ -195,18 +217,20 @@ def main():
         header = ['name', 'kw', 'nl']
         sum_vector_kw_bm25 = 0
         sum_vector_nl_bm25 = 0
-        sum_vector_kw_sbert = 0
-        sum_vector_nl_sbert = 0
-        sum_vector_kw_simCSE = 0
-        sum_vector_nl_simCSE = 0
-        
+
+
         sum_rerank_kw_ft = 0
         sum_rerank_nl_ft = 0
         sum_rerank_kw_sbert = 0
         sum_rerank_nl_sbert = 0
         sum_rerank_kw_simCSE = 0
         sum_rerank_nl_simCSE = 0
-        
+        sum_rerank_kw_sup_simCSE = 0
+        sum_rerank_nl_sup_simCSE = 0
+        sum_rerank_kw_para_mean = 0
+        sum_rerank_nl_para_mean = 0
+        sum_rerank_kw_para_max = 0
+        sum_rerank_nl_para_max = 0
 
 
         for topic in query_topic:
@@ -224,17 +248,6 @@ def main():
                 sum_vector_kw_bm25 += vector_kw_bm25
                 sum_vector_nl_bm25 += vector_nl_bm25
 
-                vector_kw_sbert = get_score(get_response(args.index_name, query_text1, English_Analyzer, "vector", 'sbert_vector', top_k, args.debug), topic, top_k).ndcg
-                vector_nl_sbert = get_score(get_response(args.index_name, query_text2, English_Analyzer, "vector", 'sbert_vector', top_k, args.debug), topic, top_k).ndcg
-                writer.writerow(['vector_sbert', round(vector_kw_sbert, 4), round(vector_nl_sbert, 4)])
-                sum_vector_kw_sbert += vector_kw_sbert
-                sum_vector_nl_sbert += vector_nl_sbert
-
-                vector_kw_simCSE = get_score(get_response(args.index_name, query_text1, English_Analyzer, "vector", 'simCSE_vector', top_k, args.debug), topic, top_k).ndcg
-                vector_nl_simCSE = get_score(get_response(args.index_name, query_text2, English_Analyzer, "vector", 'simCSE_vector', top_k, args.debug), topic, top_k).ndcg
-                writer.writerow(['vector_simCSE', round(vector_kw_simCSE, 4), round(vector_nl_simCSE, 4)])
-                sum_vector_kw_simCSE += vector_kw_simCSE
-                sum_vector_nl_simCSE += vector_nl_simCSE
 
                 rerank_kw_ft = get_score(get_response(args.index_name, query_text1, English_Analyzer, "rerank", "ft_vector", top_k, args.debug), topic, top_k).ndcg
                 rerank_nl_ft = get_score(get_response(args.index_name, query_text2, English_Analyzer, "rerank", "ft_vector", top_k, args.debug), topic, top_k).ndcg
@@ -254,16 +267,37 @@ def main():
                 sum_rerank_kw_simCSE += rerank_kw_simCSE
                 sum_rerank_nl_simCSE += rerank_nl_simCSE
                 # f.close()
-        
+                rerank_kw_sup_simCSE = get_score(get_response(args.index_name, query_text1, English_Analyzer, "rerank", "sup_simCSE_vector", top_k, args.debug), topic, top_k).ndcg
+                rerank_nl_sup_simCSE = get_score(get_response(args.index_name, query_text2, English_Analyzer, "rerank", "sup_simCSE_vector", top_k, args.debug), topic, top_k).ndcg
+                writer.writerow(['rerank_sup_simCSE', round(rerank_kw_sup_simCSE, 4), round(rerank_nl_sup_simCSE, 4)])
+                sum_rerank_kw_sup_simCSE += rerank_kw_sup_simCSE
+                sum_rerank_nl_sup_simCSE += rerank_nl_sup_simCSE
+
+                rerank_kw_para_mean = get_score(get_response(args.index_name, query_text1, English_Analyzer, "rerank", "sup_simCSE_para_mean", top_k, args.debug), topic, top_k).ndcg
+                rerank_nl_para_mean = get_score(get_response(args.index_name, query_text2, English_Analyzer, "rerank", "sup_simCSE_para_mean", top_k, args.debug), topic, top_k).ndcg
+                writer.writerow(['rerank_sup_simCSE_para_mean', round(rerank_kw_para_mean, 4), round(rerank_nl_para_mean, 4)])
+                sum_rerank_kw_para_mean += rerank_kw_para_mean
+                sum_rerank_nl_para_mean += rerank_nl_para_mean
+
+                rerank_kw_para_max = get_score(get_response(args.index_name, query_text1, English_Analyzer, "rerank", "sup_simCSE_para_max", top_k, args.debug), topic, top_k).ndcg
+                rerank_nl_para_max = get_score(get_response(args.index_name, query_text2, English_Analyzer, "rerank", "sup_simCSE_para_max", top_k, args.debug), topic, top_k).ndcg
+                writer.writerow(['rerank_sup_simCSE_para_max', round(rerank_kw_para_max, 4), round(rerank_nl_para_max, 4)])
+                sum_rerank_kw_para_max += rerank_kw_para_max
+                sum_rerank_nl_para_max += rerank_nl_para_max
+    
+
         with open(f'./scores/average.csv', 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(header)
             writer.writerow(['vector_bm25', round(sum_vector_kw_bm25/12, 4), round(sum_vector_nl_bm25/12, 4)])
-            writer.writerow(['vector_sbert', round(sum_vector_kw_sbert/12, 4), round(sum_vector_nl_sbert/12, 4)])
-            writer.writerow(['vector_simCSE', round(sum_vector_kw_simCSE/12, 4), round(sum_vector_nl_simCSE/12, 4)])
             writer.writerow(['rerank_ft', round(sum_rerank_kw_ft/12, 4), round(sum_rerank_nl_ft/12, 4)])
             writer.writerow(['rerank_sbert', round(sum_rerank_kw_sbert/12, 4), round(sum_rerank_nl_sbert/12, 4)])
             writer.writerow(['rerank_simCSE', round(sum_rerank_kw_simCSE/12, 4), round(sum_rerank_nl_simCSE/12, 4)])
+            writer.writerow(['rerank_supsimCSE', round(sum_rerank_kw_sup_simCSE/12, 4), round(sum_rerank_nl_sup_simCSE/12, 4)])
+            writer.writerow(['rerank_para_mean', round(sum_rerank_kw_para_mean/12, 4), round(sum_rerank_nl_para_mean/12, 4)])
+            writer.writerow(['rerank_para_max', round(sum_rerank_kw_para_max/12, 4), round(sum_rerank_nl_para_max/12, 4)])
+                    
+            
             # f.close()
         print()
         print("****************"*3)

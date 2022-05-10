@@ -1,7 +1,8 @@
 name,kw,nl
 vector_bm25,0.3204,0.1877
-vector_sbert,0.0182,0.1542
-vector_simCSE,0.3122,0.1732
 rerank_ft,0.3048,0.1699
 rerank_sbert,0.311,0.2848
 rerank_simCSE,0.341,0.2612
+rerank_sup_simCSE,0.3174,0.222
+rerank_sup_simCSE_para_mean,0.3184,0.222
+rerank_sup_simCSE_para_max,0.3268,0.2424

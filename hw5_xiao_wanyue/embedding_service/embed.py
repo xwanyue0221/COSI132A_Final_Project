@@ -6,9 +6,35 @@ from typing import List, Any
 from tqdm import tqdm
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from simcse import SimCSE
 from embedding_service.text_processing import TextProcessing
 
+class SupSimCSEEmbedding:
+    def __init__(self, model_name: str) -> None:
+
+        self.model = None
+        self.load(model_name)
+
+    def load(self, model_name: str) -> None:
+        try:
+            self.model = SentenceTransformer(model_name)
+            print("Model loaded Successfully !")
+        except Exception as e:
+            print("Error loading Model, ", str(e))
+
+    def encode(self, texts: List[str], pooling: Any = None) -> np.array:
+        """
+        encode a list of sentences into embeddings
+        :param texts:
+        :param pooling: no pooling method is needed for SBERT, argument passed in here is just a placeholder to make this method is consistent with fasttext
+        :return:
+        """
+        try:
+            assert self.model is not None
+        except AssertionError:
+            raise ValueError("model is not loaded!")
+        print("Bert Sentence Transformer")
+        text_embeddings = self.model.encode(texts, convert_to_numpy=True)
+        return text_embeddings
 
 class SimCSEEmbedding:
     def __init__(self, model_name: str) -> None:
@@ -142,7 +168,11 @@ class Encoder:
             self.embedding_model = FastTextEmbedding(self.model)
         elif self.embedding == "simCSE":
             self.embedding_model = SimCSEEmbedding(self.model)
+        elif self.embedding == "supsimCSE":
+            print("YESSS")
+            self.embedding_model = SupSimCSEEmbedding(self.model)
         else:
+            print("NOOOOO")
             raise ValueError(f"cannot find model: {self.model}.")
 
     def encode(self, texts: List[str], pooling: str, batch_size: int = 256) -> np.ndarray:
