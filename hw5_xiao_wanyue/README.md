@@ -18,9 +18,9 @@ COSI132A Information Retrieval Spring 2022 - Final Project: Analysis on Differen
 ## Team Member Contribution
 The team members include Capo Wang, Xiya Guan, Wanyue Xiao. Each of the team member equally contributed to this project.
 
-**Capo Wang**: Unsupervised- and unsupervised simSCE Embedding with corresponding result analysis
-**Xiya Guan**: Topic Modeling Feature Embedding with corresponding result analysis
-**Wanyue Xiao**: Front End Web Development, "Did you mean" feature, Sorting Option, Time Filtering Option
+**Capo Wang**: Unsupervised- and unsupervised simSCE Embedding with corresponding result analysis <br>
+**Xiya Guan**: Topic Modeling Feature Embedding with corresponding result analysis <br>
+**Wanyue Xiao**: Front End Web Development, "Did you mean" feature, Sorting Option, Time Filtering Option <br>
 
 
 ## Dataset
