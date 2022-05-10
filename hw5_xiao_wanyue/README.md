@@ -1,32 +1,36 @@
 # Assignment Info
-COSI132A Information Retrieval Spring 2022 - Assignment 5 Building a IR System with Elasticsearch (ES) and Embedding
+COSI132A Information Retrieval Spring 2022 - Final Project: Analysis on Different Ways of Applying NLP on Search Engine
 
 ## Description
-* This is documentation of the fifth coding assignment for course COSI 132A Information Retrieval. 
+* This is documentation of the final project for course COSI 132A Information Retrieval. 
+* The team members include Capo Wang, Xiya Guan, Wanyue Xiao.
+* Each of the team member equally contributed to this project.
 * A TREC 2018 core corpus subset and twelve TREC topics with relevance judgments will be used for system development and result evaluation.
-* In this assignment, we will provide example code for:
+* In this project, we will provide example code for:
   - Populating and querying a corpus using ES
   - Implementing NDCG (normalized discounted cumulative gain) evaluation metric
-  - Experimenting with “semantic” indexing and searching using fastText and BERT
+  - Experimenting with “semantic” indexing and searching using simSCE paragraph embedding and topic modeling embedding
 * The system consists of several key components: 
   - Displaying the similarity score between the search query and each of the documents
   - Indexing the corpus into ES with default standard analyzer and English analyzer for the text fields
-  - Integrate ES into the Flask service for interactive search. Beside the traditional lexical search, the system should also allow the user to select the text representation to use for search
-  - Evaluate the performance of 12 provided TREC query pairs using NDCG. For each of the 12 query pairs, produce a result table along with a brief analysis
+  - Integrate ES into the Flask service for interactive search. Beside the traditional lexical search, the system should also allow the user to select the text representation to use for searching.
+  - Evaluate the performance of 12 provided TREC query pairs using NDCG. For each of the 12 query pairs, produce a result table along with a brief analysis.
 
 ## Dataset
 A larger subset of TREC 2018 core corpus that has already been processed. Specifically, each document has the following fields:
 
-| variable     | Description                                                      |
-| ------------ | ---------------------------------------------------------------- |
-| doc_id       | original document id from the jsonline file                      |
-| title        | article title                                                    |
-| author       | article authors                                                  |
-| content      | main article content (HTML tags removed)                         |
-| date         | publish date in the format “yyyy/MM/dd”                          |
-| annotation   | annotation for its relevance to a topic                          |
-| ft_vector    | fastText embedding of the content                                |
-| sbert_vector | Sentence BERT embedding of the content                           |
+| variable      | Description                                                      |
+| ------------- | ---------------------------------------------------------------- |
+| doc_id        | original document id from the jsonline file                      |
+| title         | article title                                                    |
+| author        | article authors                                                  |
+| content       | main article content (HTML tags removed)                         |
+| date          | publish date in the format “yyyy/MM/dd”                          |
+| annotation    | annotation for its relevance to a topic                          |
+| ft_vector     | fastText embedding of the content                                |
+| sbert_vector  | Sentence BERT embedding of the content                           |
+| simSCE        | ----------------------------------                               |
+| topic_feature | ----------------------------------                               |
 
 **Notes**:
 * For the annotation field, the value is stored as the format of topic_id-relevance. The relevance can be either 0, 1 or 2, which represents irrelevant, relevant or very relevant.
@@ -73,10 +77,21 @@ Load sentence BERT embeddings that are trained on msmarco. Each embedding has 76
 python -m embedding_service.server --embedding sbert  --model msmarco-distilbert-base-v3
 ```
 
+Load simCSE Embedding into the index called "    "
+```shell script
+python 
+```
+
+Load topic feature embeddings into the index called "      "
+```shell script
+python 
+```
+
 Load wapo docs into the index called "wapo_docs_50k"
 ```shell script
 python load_es_index.py --index_name wapo_docs_50k --wapo_path pa5_data/subset_wapo_50k_sbert_ft_filtered.jl
 ```
+
 **Note that you should keep all these shells running in the backend while you are building and using your IR system.**
 
 
