@@ -217,7 +217,16 @@ def main():
         header = ['name', 'kw', 'nl']
         sum_vector_kw_bm25 = 0
         sum_vector_nl_bm25 = 0
-
+        sum_vector_kw_sbert = 0
+        sum_vector_nl_sbert = 0
+        sum_vector_kw_simCSE = 0
+        sum_vector_nl_simCSE = 0
+        sum_vector_kw_sup_simCSE = 0
+        sum_vector_nl_sup_simCSE = 0
+        sum_vector_kw_para_mean = 0
+        sum_vector_nl_para_mean = 0
+        sum_vector_kw_para_max = 0
+        sum_vector_nl_para_max = 0
 
         sum_rerank_kw_ft = 0
         sum_rerank_nl_ft = 0
@@ -248,6 +257,35 @@ def main():
                 sum_vector_kw_bm25 += vector_kw_bm25
                 sum_vector_nl_bm25 += vector_nl_bm25
 
+                vector_kw_sbert = get_score(get_response(args.index_name, query_text1, English_Analyzer, "vector", 'sbert_vector', top_k, args.debug), topic, top_k).ndcg
+                vector_nl_sbert = get_score(get_response(args.index_name, query_text2, English_Analyzer, "vector", 'sbert_vector', top_k, args.debug), topic, top_k).ndcg
+                writer.writerow(['vector_sbert', round(vector_kw_sbert, 4), round(vector_nl_sbert, 4)])
+                sum_vector_kw_sbert += vector_kw_sbert
+                sum_vector_nl_sbert += vector_nl_sbert
+
+                vector_kw_simCSE = get_score(get_response(args.index_name, query_text1, English_Analyzer, "vector", 'simCSE_vector', top_k, args.debug), topic, top_k).ndcg
+                vector_nl_simCSE = get_score(get_response(args.index_name, query_text2, English_Analyzer, "vector", 'simCSE_vector', top_k, args.debug), topic, top_k).ndcg
+                writer.writerow(['vector_simCSE', round(vector_kw_simCSE, 4), round(vector_nl_simCSE, 4)])
+                sum_vector_kw_simCSE += vector_kw_simCSE
+                sum_vector_nl_simCSE += vector_nl_simCSE
+                
+                vector_kw_sup_simCSE = get_score(get_response(args.index_name, query_text1, English_Analyzer, "vector", 'sup_simCSE_vector', top_k, args.debug), topic, top_k).ndcg
+                vector_nl_sup_simCSE = get_score(get_response(args.index_name, query_text2, English_Analyzer, "vector", 'sup_simCSE_vector', top_k, args.debug), topic, top_k).ndcg
+                writer.writerow(['vector_sup_simCSE', round(vector_kw_sup_simCSE, 4), round(vector_nl_sup_simCSE, 4)])
+                sum_vector_kw_sup_simCSE += vector_kw_sup_simCSE
+                sum_vector_nl_sup_simCSE += vector_nl_sup_simCSE
+                
+                vector_kw_para_mean = get_score(get_response(args.index_name, query_text1, English_Analyzer, "vector", 'sup_simCSE_para_mean', top_k, args.debug), topic, top_k).ndcg
+                vector_nl_para_mean = get_score(get_response(args.index_name, query_text2, English_Analyzer, "vector", 'sup_simCSE_para_mean', top_k, args.debug), topic, top_k).ndcg
+                writer.writerow(['sup_simCSE_para_mean', round(vector_kw_para_mean, 4), round(vector_nl_para_mean, 4)])
+                sum_vector_kw_para_mean += vector_kw_para_mean
+                sum_vector_nl_para_mean += vector_nl_para_mean
+
+                vector_kw_para_max = get_score(get_response(args.index_name, query_text1, English_Analyzer, "vector", 'sup_simCSE_para_max', top_k, args.debug), topic, top_k).ndcg
+                vector_nl_para_max = get_score(get_response(args.index_name, query_text2, English_Analyzer, "vector", 'sup_simCSE_para_max', top_k, args.debug), topic, top_k).ndcg
+                writer.writerow(['sup_simCSE_para_max', round(vector_kw_para_max, 4), round(vector_nl_para_max, 4)])
+                sum_vector_kw_para_max += vector_kw_para_max
+                sum_vector_nl_para_max += vector_nl_para_max
 
                 rerank_kw_ft = get_score(get_response(args.index_name, query_text1, English_Analyzer, "rerank", "ft_vector", top_k, args.debug), topic, top_k).ndcg
                 rerank_nl_ft = get_score(get_response(args.index_name, query_text2, English_Analyzer, "rerank", "ft_vector", top_k, args.debug), topic, top_k).ndcg
