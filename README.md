@@ -156,9 +156,9 @@ In the following table, the evaluation scores for the example query with differe
 
 ### Output after using topic embeddings 
 #### concatenating sbert/fasttext with topic embeddings
-![concatenating sbert/fasttext with topic embeddings](images/concate.PNG)
+![concatenating sbert/fasttext with topic embeddings](https://github.com/xwanyue0221/COSI132A_Final_Project/blob/master/images/concate.png)
 #### reranking with topic embeddings
-![reranking with topic embeddings](images/rerank.PNG)
+![reranking with topic embeddings](https://github.com/xwanyue0221/COSI132A_Final_Project/blob/master/images/rerank.PNG)
 
 
 ###  Output after using simCSE embeddings
