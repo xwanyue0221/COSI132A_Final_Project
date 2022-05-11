@@ -15,7 +15,11 @@ class BaseDoc(Document):
     annotation = Text()
     ft_vector = DenseVector(dims=300)  # fasttext embedding in the DenseVector field
     sbert_vector = DenseVector(dims=768)  # sentence BERT embedding in the DenseVector field
-
+    # simCSE_vector = DenseVector(dims=768)
+    # sup_simCSE_vector = DenseVector(dims=768)
+    # sup_simCSE_para_max = DenseVector(dims=768)
+    # sup_simCSE_para_mean = DenseVector(dims=768)
+    
     def save(self, *args, **kwargs):
         """
         save an instance of this document mapping in the index

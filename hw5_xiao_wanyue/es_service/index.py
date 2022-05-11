@@ -44,12 +44,16 @@ class ESIndex(object):
             es_doc.date = doc["published_date"]
             es_doc.ft_vector = doc["ft_vector"]
             es_doc.sbert_vector = doc["sbert_vector"]
+            # es_doc.simCSE_vector = doc["simCSE_vector"]
+            # es_doc.sup_simCSE_vector = doc["sup_simCSE_vector"]
+            # es_doc.sup_simCSE_para_max = doc["sup_simCSE_para_max"]
+            # es_doc.sup_simCSE_para_mean = doc["sup_simCSE_para_mean"]
             yield es_doc
 
     def load(self, docs: Union[Iterator[Dict], Sequence[Dict]]):
         # bulk insertion
         bulk(connections.get_connection(),
-             (
+            (
                 d.to_dict(
                     include_meta=True, skip_empty=False
                 )  # serialize the BaseDoc instance (include meta information and not skip empty documents)
